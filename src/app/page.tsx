@@ -1,65 +1,102 @@
-import Image from "next/image";
+import {
+  Terminal,
+  type ContactItem,
+  type Dotfile,
+  type Project,
+  type Role,
+} from "@/components/terminal";
+
+// ---------------------------------------------------------------------------
+// Content. Same source-of-truth as CONTENT_PLAN.md — the terminal renders
+// these arrays in response to commands. Server component delivers them to
+// the client component as props.
+// ---------------------------------------------------------------------------
+
+const NAME = "Anthony Kim";
+
+const BIO =
+  "Full stack engineer building software at the seam between product and customer. Currently embedded with Silicon Valley teams as a Forward Deployed Engineer at Lyra.";
+
+const EXPERIENCE: Role[] = [
+  {
+    index: "01",
+    title: "Forward Deployed Engineer",
+    company: "Lyra",
+    blurb: "Powering Silicon Valley with engineering.",
+  },
+  {
+    index: "02",
+    title: "Software Engineer",
+    company: "Rovi Health",
+    blurb:
+      "Providing text-based healthcare for employees, slashing costs along the way.",
+  },
+  {
+    index: "03",
+    title: "Founding Engineer",
+    company: "AutoDoc",
+    blurb:
+      "Cut documentation time and increased compliance for the automotive industry.",
+  },
+];
+
+const PROJECTS: Project[] = [
+  {
+    index: "01",
+    name: "Lyroom",
+    context: "internal · Lyra",
+    blurb:
+      "A Loom clone built for internal distribution at Lyra. Async screen recording with one-click sharing for teams that move fast.",
+  },
+  {
+    index: "02",
+    name: "Inventory Management System",
+    context: "open source",
+    blurb:
+      "Inventory management for student engineering teams. Parts, kits, and checkouts without the spreadsheet sprawl.",
+  },
+];
+
+const DOTFILES: Dotfile[] = [
+  {
+    name: "nvim",
+    description: "neovim configuration",
+    href: "https://github.com/anthonykimm/nvim-config",
+  },
+  {
+    name: "dotfiles",
+    description: "shell, tmux, git, the rest of it",
+    href: "https://github.com/anthonykimm/dotfiles",
+  },
+];
+
+const CONTACT: ContactItem[] = [
+  {
+    label: "email",
+    value: "anthonykim030@gmail.com",
+    href: "mailto:anthonykim030@gmail.com",
+  },
+  {
+    label: "github",
+    value: "@anthonykimm",
+    href: "https://github.com/anthonykimm",
+  },
+  {
+    label: "linkedin",
+    value: "/in/anthony-kim-776975269",
+    href: "https://www.linkedin.com/in/anthony-kim-776975269/",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Terminal
+      name={NAME}
+      bio={BIO}
+      experience={EXPERIENCE}
+      projects={PROJECTS}
+      dotfiles={DOTFILES}
+      contact={CONTACT}
+    />
   );
 }

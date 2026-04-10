@@ -1,26 +1,221 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Terminal palette — refined CRT phosphor. Dark, slightly green-tinted base
+   with a phosphor green prompt, cool blue headings, and amber links. Plenty
+   of contrast, but warm enough that long reading isn't fatiguing.
+   --------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:          #0a1228;
+  --bg-2:        #111b3a;
+  --bg-3:        #18244c;
+
+  --fg:          #d2d2d4;
+  --fg-bright:   #f4f4f5;
+  --fg-dim:      #8b8b90;
+
+  --prompt:      #7ee787;
+  --prompt-glow: rgba(126, 231, 135, 0.55);
+
+  --heading:     #79c0ff;
+  --link:        #ffa657;
+  --pink:        #ff7eb6;
+  --error:       #ff7b72;
+  --muted:       #6e7681;
+
+  --rule:        rgba(255, 255, 255, 0.08);
+  --rule-strong: rgba(255, 255, 255, 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg:        var(--bg);
+  --color-bg-2:      var(--bg-2);
+  --color-bg-3:      var(--bg-3);
+  --color-fg:        var(--fg);
+  --color-fg-bright: var(--fg-bright);
+  --color-fg-dim:    var(--fg-dim);
+  --color-prompt:    var(--prompt);
+  --color-heading:   var(--heading);
+  --color-link:      var(--link);
+  --color-pink:      var(--pink);
+  --color-error:     var(--error);
+  --color-muted:     var(--muted);
+  --color-rule:      var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---------------------------------------------------------------------------
+   Base — mono everywhere, paper-of-the-CRT background, no smoothing tricks.
+   --------------------------------------------------------------------------- */
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo,
+    Consolas, monospace;
+  font-feature-settings: "calt", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Scanlines — fine horizontal stripes, low contrast, fixed to viewport. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.22) 3px,
+    rgba(0, 0, 0, 0.22) 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+/* Vignette — soft dark edges, adds atmosphere. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  background: radial-gradient(
+    ellipse 130% 100% at center,
+    transparent 45%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+::selection {
+  background: var(--prompt);
+  color: var(--bg);
+  text-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Phosphor glow — used for the ASCII headline and other big hits.
+   --------------------------------------------------------------------------- */
+
+.glow {
+  text-shadow:
+    0 0 1px currentColor,
+    0 0 8px var(--prompt-glow);
+}
+
+.glow-strong {
+  text-shadow:
+    0 0 1px currentColor,
+    0 0 6px var(--prompt-glow),
+    0 0 22px rgba(126, 231, 135, 0.35),
+    0 0 42px rgba(126, 231, 135, 0.18);
+}
+
+/* ---------------------------------------------------------------------------
+   Cursor — block caret. Real <input> uses native caret-color so this is
+   reserved for the static "snapshot" prompt next to history echoes.
+   --------------------------------------------------------------------------- */
+
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.caret {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  background: var(--prompt);
+  vertical-align: -0.15em;
+  margin-left: 1px;
+  animation: blink 1.05s steps(1, end) infinite;
+  box-shadow: 0 0 8px var(--prompt-glow);
+}
+
+/* ---------------------------------------------------------------------------
+   Boot reveal — every line eases in from a tiny slide. Fast: this is a
+   shell, not a curtain.
+   --------------------------------------------------------------------------- */
+
+@keyframes type-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.type-in {
+  animation: type-in 240ms ease-out both;
+}
+
+@keyframes ascii-flicker {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  3%       { opacity: 0.92; filter: brightness(1.15); }
+  6%       { opacity: 1; filter: brightness(0.95); }
+  9%       { opacity: 0.97; }
+  50%      { opacity: 1; }
+  52%      { opacity: 0.95; filter: brightness(1.08); }
+}
+
+.ascii-flicker {
+  animation:
+    type-in 420ms ease-out both,
+    ascii-flicker 7s 600ms ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   The real <input> sits inside the prompt line and inherits font/color.
+   Caret color is the phosphor green so it pulses on its own.
+   --------------------------------------------------------------------------- */
+
+.term-input {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--fg-bright);
+  caret-color: var(--prompt);
+  width: 100%;
+}
+
+.term-input::placeholder {
+  color: var(--fg-dim);
+  opacity: 0.6;
+}
+
+/* Scrollbar — phosphor sliver. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Reduced motion: turn off the showy bits but keep the screen legible. */
+@media (prefers-reduced-motion: reduce) {
+  .caret,
+  .ascii-flicker {
+    animation: none;
+    opacity: 1;
+  }
+  .type-in { animation: none; }
 }
