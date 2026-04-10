@@ -27,7 +27,7 @@ const EXPERIENCE: Role[] = [
   {
     index: "02",
     title: "Software Engineer",
-    company: "Rovi Health",
+    company: "Rovi Health (YC F25)",
     blurb:
       "Providing text-based healthcare for employees, slashing costs along the way.",
   },
