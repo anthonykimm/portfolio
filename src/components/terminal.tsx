@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { Fzf } from "fzf";
+import { SudoRmRf } from "./sudo-rm-rf";
 
 // ---------------------------------------------------------------------------
 // Public types — kept here so page.tsx can import them without dragging the
@@ -99,6 +100,7 @@ export function Terminal({
   const [histIdx, setHistIdx] = useState(-1);
   const [tabIdx, setTabIdx] = useState(-1);
   const [tabPartial, setTabPartial] = useState("");
+  const [sudoRmRf, setSudoRmRf] = useState(false);
 
   const idRef = useRef(0);
   const bootedRef = useRef(false);
@@ -239,6 +241,17 @@ export function Terminal({
           </div>,
         ],
       },
+      "sudo rm -rf /*": {
+        description: "...",
+        handler: () => {
+          setSudoRmRf(true);
+          return [
+            <div key="s" className="text-error font-bold">
+              [sudo] rm -rf /*: destroying everything...
+            </div>,
+          ];
+        },
+      },
       sudo: {
         description: "...",
         handler: () => [
@@ -315,14 +328,24 @@ export function Terminal({
         return;
       }
 
-      const [cmdName, ...args] = trimmed.split(/\s+/);
-      const entry = commands[cmdName.toLowerCase()];
+      // Check for multi-word commands first (e.g. "sudo rm -rf /*")
+      const lower = trimmed.toLowerCase();
+      let entry = Object.prototype.hasOwnProperty.call(commands, lower)
+        ? commands[lower]
+        : null;
+      let args: string[] = [];
+      const [firstWord, ...rest] = trimmed.split(/\s+/);
+
+      if (!entry) {
+        entry = commands[firstWord.toLowerCase()] ?? null;
+        args = rest;
+      }
 
       if (!entry) {
         addLines([
           echo,
           <div key="err" className="text-error">
-            command not found: {cmdName}
+            command not found: {firstWord}
           </div>,
           <div key="hint" className="text-fg-dim">
             try <Kbd>help</Kbd> for the list of commands.
@@ -456,8 +479,14 @@ export function Terminal({
 
   // --------------------------------------------------------------------------
 
+  const handleSudoRmRfDone = useCallback(() => {
+    setSudoRmRf(false);
+    resetToBoot();
+  }, [resetToBoot]);
+
   return (
     <div className="relative flex min-h-screen flex-col">
+      {sudoRmRf && <SudoRmRf onDone={handleSudoRmRfDone} />}
       <TitleBar />
 
       <main className="flex-1 px-4 pt-6 pb-16 sm:px-8">
