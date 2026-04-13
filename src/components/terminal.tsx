@@ -20,6 +20,8 @@ export type Role = {
   title: string;
   company: string;
   blurb: string;
+  href?: string;
+  dates?: string;
 };
 
 export type Project = {
@@ -27,6 +29,19 @@ export type Project = {
   name: string;
   context: string;
   blurb: string;
+  href?: string;
+};
+
+export type Education = {
+  institution: string;
+  degree: string;
+  years: string;
+};
+
+export type Volunteering = {
+  title: string;
+  organization: string;
+  dates: string;
 };
 
 export type Dotfile = {
@@ -48,6 +63,8 @@ type Props = {
   projects: Project[];
   dotfiles: Dotfile[];
   contact: ContactItem[];
+  education: Education[];
+  volunteering: Volunteering[];
 };
 
 // ---------------------------------------------------------------------------
@@ -72,6 +89,8 @@ export function Terminal({
   projects,
   dotfiles,
   contact,
+  education,
+  volunteering,
 }: Props) {
   const [lines, setLines] = useState<Line[]>([]);
   const [input, setInput] = useState("");
@@ -148,8 +167,14 @@ export function Terminal({
         handler: () => helpOutput(),
       },
       whoami: {
-        description: "about me",
-        handler: () => whoamiOutput(name, bio),
+        description: "about me  [-l|--long for full CV]",
+        handler: (args) => {
+          const long = args.includes("-l") || args.includes("--long");
+          if (long) {
+            return whoamiLongOutput(name, bio, experience, projects, education, volunteering, contact);
+          }
+          return whoamiOutput(name, bio);
+        },
       },
       experience: {
         description: "work history",
@@ -175,6 +200,14 @@ export function Terminal({
         description: "how to reach me",
         handler: () => contactOutput(contact),
       },
+      education: {
+        description: "where I studied",
+        handler: () => educationOutput(education),
+      },
+      volunteering: {
+        description: "community involvement",
+        handler: () => volunteeringOutput(volunteering),
+      },
       ls: {
         description: "list sections",
         handler: () => [
@@ -182,6 +215,8 @@ export function Terminal({
             {[
               "experience/",
               "projects/",
+              "education/",
+              "volunteering/",
               "config/",
               "contact/",
             ].map((s) => (
@@ -231,7 +266,7 @@ export function Terminal({
         },
       },
     }),
-    [name, bio, experience, projects, dotfiles, contact, resetToBoot],
+    [name, bio, experience, projects, dotfiles, contact, education, volunteering, resetToBoot],
   );
 
   // ---- runner --------------------------------------------------------------
@@ -445,16 +480,16 @@ export function Terminal({
 
 function TitleBar() {
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-rule bg-bg/80 px-4 py-2 backdrop-blur-sm sm:px-6">
+    <header className="sticky top-0 z-20 relative flex items-center justify-between border-b border-rule bg-bg/80 px-4 py-2 backdrop-blur-sm sm:px-6">
       <div className="flex items-center gap-1.5">
         <span className="size-3 rounded-full bg-error/80 shadow-[0_0_6px_rgba(255,123,114,0.5)]" />
         <span className="size-3 rounded-full bg-link/80 shadow-[0_0_6px_rgba(255,166,87,0.45)]" />
         <span className="size-3 rounded-full bg-prompt/80 shadow-[0_0_6px_rgba(126,231,135,0.5)]" />
       </div>
 
-      <div className="flex-1 text-center text-[11px] tracking-[0.12em] text-fg-dim uppercase">
-        {USER}@{HOST} <span className="text-muted">·</span> /portfolio{" "}
-        <span className="text-muted">·</span> zsh
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-[11px] tracking-[0.12em] text-fg-dim uppercase">
+        {USER}@{HOST} <span className="text-muted">&nbsp;·&nbsp;</span> /portfolio{" "}
+        <span className="text-muted">&nbsp;·&nbsp;</span> zsh
       </div>
 
       <div className="text-[11px] text-fg-dim tabular-nums">
@@ -566,13 +601,15 @@ function AsciiArt() {
 
 function helpOutput(): ReactNode[] {
   const rows: Array<[string, string]> = [
-    ["help",       "list available commands"],
-    ["whoami",     "about me"],
-    ["experience", "work history"],
-    ["projects",   "selected projects"],
-    ["config",     "dotfiles & system config"],
-    ["contact",    "how to reach me"],
-    ["clear",      "clear the screen"],
+    ["help",         "list available commands"],
+    ["whoami",       "about me  [-l for full CV]"],
+    ["experience",   "work history"],
+    ["projects",     "selected projects"],
+    ["education",    "where I studied"],
+    ["volunteering", "community involvement"],
+    ["config",       "dotfiles & system config"],
+    ["contact",      "how to reach me"],
+    ["clear",        "clear the screen"],
   ];
 
   return [
@@ -607,6 +644,98 @@ function whoamiOutput(name: string, bio: string): ReactNode[] {
   ];
 }
 
+function whoamiLongOutput(
+  name: string,
+  bio: string,
+  roles: Role[],
+  projects: Project[],
+  education: Education[],
+  volunteering: Volunteering[],
+  contact: ContactItem[],
+): ReactNode[] {
+  return [
+    // ── header ──
+    <div key="cv-rule-top" className="text-muted">{"─".repeat(60)}</div>,
+    <div key="cv-name" className="text-heading text-base font-bold">{name}</div>,
+    <div key="cv-bio" className="mt-1 max-w-[80ch] text-fg">{bio}</div>,
+    <div key="cv-rule-1" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+
+    // ── experience ──
+    <div key="cv-exp-h" className="mt-2 text-heading font-medium">EXPERIENCE</div>,
+    ...roles.flatMap((role) => [
+      <div key={`cv-e-${role.index}-h`} className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-fg-bright font-medium">{role.title}</span>
+        <span className="text-fg-dim">@</span>
+        {role.href ? (
+          <a href={role.href} target="_blank" rel="noreferrer" className="text-prompt decoration-prompt/40 underline-offset-4 hover:underline">
+            {role.company}
+          </a>
+        ) : (
+          <span className="text-prompt">{role.company}</span>
+        )}
+        {role.dates && <span className="text-[12px] text-muted">| {role.dates}</span>}
+      </div>,
+      <div key={`cv-e-${role.index}-b`} className="ml-4 max-w-[80ch] text-fg-dim">{role.blurb}</div>,
+    ]),
+
+    // ── projects ──
+    <div key="cv-rule-2" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+    <div key="cv-proj-h" className="mt-2 text-heading font-medium">PROJECTS</div>,
+    ...projects.flatMap((p) => [
+      <div key={`cv-p-${p.index}-h`} className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        {p.href ? (
+          <a href={p.href} target="_blank" rel="noreferrer" className="text-fg-bright font-medium decoration-fg-bright/40 underline-offset-4 hover:underline">
+            {p.name}
+          </a>
+        ) : (
+          <span className="text-fg-bright font-medium">{p.name}</span>
+        )}
+        <span className="text-[12px] text-fg-dim">— {p.context}</span>
+      </div>,
+      <div key={`cv-p-${p.index}-b`} className="ml-4 max-w-[80ch] text-fg-dim">{p.blurb}</div>,
+    ]),
+
+    // ── education ──
+    <div key="cv-rule-3" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+    <div key="cv-edu-h" className="mt-2 text-heading font-medium">EDUCATION</div>,
+    ...education.map((item, i) => (
+      <div key={`cv-ed-${i}`} className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-fg-bright font-medium">{item.degree}</span>
+        <span className="text-fg-dim">@</span>
+        <span className="text-prompt">{item.institution}</span>
+        <span className="text-[12px] text-muted">| {item.years}</span>
+      </div>
+    )),
+
+    // ── volunteering ──
+    <div key="cv-rule-4" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+    <div key="cv-vol-h" className="mt-2 text-heading font-medium">VOLUNTEERING</div>,
+    ...volunteering.map((item, i) => (
+      <div key={`cv-vol-${i}`} className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-fg-bright font-medium">{item.title}</span>
+        <span className="text-fg-dim">@</span>
+        <span className="text-prompt">{item.organization}</span>
+        <span className="text-[12px] text-muted">| {item.dates}</span>
+      </div>
+    )),
+
+    // ── contact ──
+    <div key="cv-rule-5" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+    <div key="cv-ct-h" className="mt-2 text-heading font-medium">CONTACT</div>,
+    <div key="cv-ct-g" className="mt-1 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-0.5">
+      {contact.map((it) => (
+        <div key={it.label} className="contents">
+          <span className="text-fg-dim">{it.label}</span>
+          <a href={it.href} target="_blank" rel="noreferrer" className="text-link decoration-link/40 underline-offset-4 hover:underline">
+            {it.value}
+          </a>
+        </div>
+      ))}
+    </div>,
+    <div key="cv-rule-bot" className="mt-3 text-muted">{"─".repeat(60)}</div>,
+  ];
+}
+
 function experienceOutput(roles: Role[]): ReactNode[] {
   return [
     <SectionHeader key="e-h">{"// experience"}</SectionHeader>,
@@ -615,7 +744,21 @@ function experienceOutput(roles: Role[]): ReactNode[] {
         <span className="text-fg-dim tabular-nums">[{role.index}]</span>
         <span className="text-fg-bright font-medium">{role.title}</span>
         <span className="text-fg-dim">@</span>
-        <span className="text-prompt">{role.company}</span>
+        {role.href ? (
+          <a
+            href={role.href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-prompt decoration-prompt/40 underline-offset-4 hover:underline"
+          >
+            {role.company}
+          </a>
+        ) : (
+          <span className="text-prompt">{role.company}</span>
+        )}
+        {role.dates && (
+          <span className="text-[12px] text-muted">{role.dates}</span>
+        )}
       </div>,
       <div
         key={`${role.index}-b`}
@@ -636,7 +779,18 @@ function projectsOutput(projects: Project[]): ReactNode[] {
         className="mt-3 flex flex-wrap items-baseline gap-x-3"
       >
         <span className="text-fg-dim tabular-nums">[{p.index}]</span>
-        <span className="text-fg-bright font-medium">{p.name}</span>
+        {p.href ? (
+          <a
+            href={p.href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-fg-bright font-medium decoration-fg-bright/40 underline-offset-4 hover:underline"
+          >
+            {p.name}
+          </a>
+        ) : (
+          <span className="text-fg-bright font-medium">{p.name}</span>
+        )}
         <span className="text-[12px] text-fg-dim">— {p.context}</span>
       </div>,
       <div
@@ -705,6 +859,34 @@ function contactOutput(items: ContactItem[]): ReactNode[] {
         </div>
       ))}
     </div>,
+  ];
+}
+
+function educationOutput(items: Education[]): ReactNode[] {
+  return [
+    <SectionHeader key="ed-h">{"// education"}</SectionHeader>,
+    ...items.map((item, i) => (
+      <div key={`ed-${i}`} className="mt-3 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-fg-bright font-medium">{item.degree}</span>
+        <span className="text-fg-dim">@</span>
+        <span className="text-prompt">{item.institution}</span>
+        <span className="text-[12px] text-muted">{item.years}</span>
+      </div>
+    )),
+  ];
+}
+
+function volunteeringOutput(items: Volunteering[]): ReactNode[] {
+  return [
+    <SectionHeader key="vol-h">{"// volunteering"}</SectionHeader>,
+    ...items.map((item, i) => (
+      <div key={`vol-${i}`} className="mt-3 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-fg-bright font-medium">{item.title}</span>
+        <span className="text-fg-dim">@</span>
+        <span className="text-prompt">{item.organization}</span>
+        <span className="text-[12px] text-muted">{item.dates}</span>
+      </div>
+    )),
   ];
 }
 

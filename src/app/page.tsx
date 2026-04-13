@@ -2,8 +2,10 @@ import {
   Terminal,
   type ContactItem,
   type Dotfile,
+  type Education,
   type Project,
   type Role,
+  type Volunteering,
 } from "@/components/terminal";
 
 // ---------------------------------------------------------------------------
@@ -22,12 +24,16 @@ const EXPERIENCE: Role[] = [
     index: "01",
     title: "Forward Deployed Engineer",
     company: "Lyra",
+    href: "https://lyratechnologies.com.au/",
+    dates: "Jan 2026 – Present",
     blurb: "Powering Silicon Valley with engineering.",
   },
   {
     index: "02",
     title: "Software Engineer",
     company: "Rovi Health (YC F25)",
+    href: "https://www.rovi.health/",
+    dates: "Jan 2026 – Apr 2026",
     blurb:
       "Providing text-based healthcare for employees, slashing costs along the way.",
   },
@@ -35,8 +41,17 @@ const EXPERIENCE: Role[] = [
     index: "03",
     title: "Founding Engineer",
     company: "AutoDoc",
+    href: "https://autodoc.com.au/",
+    dates: "Oct 2025 – Jan 2026",
     blurb:
       "Cut documentation time and increased compliance for the automotive industry.",
+  },
+  {
+    index: "04",
+    title: "Software Engineer",
+    company: "Monash Automation",
+    dates: "Jun 2025 – Oct 2025",
+    blurb: "Inventory management system for engineers.",
   },
 ];
 
@@ -45,13 +60,14 @@ const PROJECTS: Project[] = [
     index: "01",
     name: "Lyroom",
     context: "internal · Lyra",
+    href: "https://lyroom-nextjs.vercel.app/",
     blurb:
       "A Loom clone built for internal distribution at Lyra. Async screen recording with one-click sharing for teams that move fast.",
   },
   {
     index: "02",
     name: "Inventory Management System",
-    context: "open source",
+    context: "Monash Automation",
     blurb:
       "Inventory management for student engineering teams. Parts, kits, and checkouts without the spreadsheet sprawl.",
   },
@@ -67,6 +83,22 @@ const DOTFILES: Dotfile[] = [
     name: "dotfiles",
     description: "shell, tmux, git, the rest of it",
     href: "https://github.com/anthonykimm/dotfiles",
+  },
+];
+
+const EDUCATION: Education[] = [
+  {
+    institution: "Monash University",
+    degree: "Bachelor of Advanced Computer Science",
+    years: "2024 – 2025",
+  },
+];
+
+const VOLUNTEERING: Volunteering[] = [
+  {
+    title: "HR Officer",
+    organization: "Monash Association of Coding (MAC)",
+    dates: "Oct 2024 – Oct 2025",
   },
 ];
 
@@ -97,6 +129,8 @@ export default function Home() {
       projects={PROJECTS}
       dotfiles={DOTFILES}
       contact={CONTACT}
+      education={EDUCATION}
+      volunteering={VOLUNTEERING}
     />
   );
 }
