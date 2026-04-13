@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Fzf } from "fzf";
 
 // ---------------------------------------------------------------------------
 // Public types — kept here so page.tsx can import them without dragging the
@@ -96,11 +97,14 @@ export function Terminal({
   const [input, setInput] = useState("");
   const [cmdHistory, setCmdHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState(-1);
+  const [tabIdx, setTabIdx] = useState(-1);
+  const [tabPartial, setTabPartial] = useState("");
 
   const idRef = useRef(0);
   const bootedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const tabCyclingRef = useRef(false);
 
   // ---- imperative line API -------------------------------------------------
 
@@ -269,6 +273,32 @@ export function Terminal({
     [name, bio, experience, projects, dotfiles, contact, education, volunteering, resetToBoot],
   );
 
+  // ---- fuzzy suggestions ----------------------------------------------------
+
+  const commandNames = useMemo(() => Object.keys(commands), [commands]);
+  const fzf = useMemo(() => new Fzf(commandNames), [commandNames]);
+
+  const fuzzyMatch = useCallback((partial: string) => {
+    if (!partial || partial.includes(" ")) return [];
+    return fzf.find(partial).map((r) => r.item);
+  }, [fzf]);
+
+  // Suggestions derived from tabPartial (while cycling) or current input
+  const suggestions = useMemo(() => {
+    const source = tabPartial || input.trim();
+    return fuzzyMatch(source);
+  }, [tabPartial, input, fuzzyMatch]);
+
+  // Reset tab state when user types normally (not Tab cycling)
+  useEffect(() => {
+    if (tabCyclingRef.current) {
+      tabCyclingRef.current = false;
+      return;
+    }
+    setTabIdx(-1);
+    setTabPartial("");
+  }, [input]);
+
   // ---- runner --------------------------------------------------------------
 
   const runCommand = useCallback(
@@ -356,28 +386,22 @@ export function Terminal({
 
     if (e.key === "Tab") {
       e.preventDefault();
-      const partial = input.toLowerCase();
-      if (!partial) return;
-      const matches = Object.keys(commands).filter((c) => c.startsWith(partial));
+      // Compute matches from the original partial (before any Tab cycling)
+      const partial = tabPartial || input.trim();
+      const matches = fuzzyMatch(partial);
+      if (matches.length === 0) return;
+      tabCyclingRef.current = true;
+      if (!tabPartial) setTabPartial(partial);
       if (matches.length === 1) {
         setInput(matches[0]);
-      } else if (matches.length > 1) {
-        addLines([
-          <PromptEcho key={`tab-${idRef.current}`}>
-            <span className="text-fg-bright">{input}</span>
-          </PromptEcho>,
-          <div
-            key={`tab-list-${idRef.current}`}
-            className="flex flex-wrap gap-x-4 gap-y-1"
-          >
-            {matches.map((m) => (
-              <span key={m} className="text-prompt">
-                {m}
-              </span>
-            ))}
-          </div>,
-          <Spacer key={`tab-sp-${idRef.current}`} />,
-        ]);
+        setTabIdx(-1);
+        setTabPartial("");
+      } else {
+        const next = e.shiftKey
+          ? (tabIdx <= 0 ? matches.length - 1 : tabIdx - 1)
+          : (tabIdx + 1) % matches.length;
+        setTabIdx(next);
+        setInput(matches[next]);
       }
       return;
     }
@@ -465,6 +489,23 @@ export function Terminal({
               suppressHydrationWarning
             />
           </form>
+
+          {suggestions.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-fg-dim">
+              {suggestions.map((s, i) => (
+                <span
+                  key={s}
+                  className={
+                    i === tabIdx
+                      ? "text-fg-bright bg-rule/40 px-1 rounded-sm"
+                      : "text-prompt"
+                  }
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div ref={bottomRef} aria-hidden className="h-6" />
         </div>
